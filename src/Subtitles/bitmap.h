@@ -21,8 +21,7 @@
 #define BITMAP_H
 
 #include <QImage>
-
-template <typename T> class QVector;
+#include <QVector>
 
 class Filter;
 class Palette;

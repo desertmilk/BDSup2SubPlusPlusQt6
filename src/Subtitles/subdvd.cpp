@@ -817,7 +817,7 @@ void SubDVD::readIdx(int idxToRead)
         // size (e.g. "size: 720x576")
         if (key == "size")
         {
-            keyValue = value.split("x", QString::SkipEmptyParts);
+            keyValue = value.split("x", Qt::SkipEmptyParts);
             if (keyValue.isEmpty() || keyValue.size() <= 1)
             {
                 throw QString("Illegal size: %1").arg(value);
@@ -842,7 +842,7 @@ void SubDVD::readIdx(int idxToRead)
         // origin (e.g. "org: 0, 0")
         if (key == "org")
         {
-            keyValue = value.split(",", QString::SkipEmptyParts);
+            keyValue = value.split(",", Qt::SkipEmptyParts);
             if (keyValue.isEmpty() || keyValue.size() <= 1)
             {
                 throw QString("Illegal origin: %1").arg(value);
@@ -968,7 +968,7 @@ void SubDVD::readIdx(int idxToRead)
         if (key == "id")
         {
             QString id;
-            QStringList vals = value.split(',', QString::SkipEmptyParts);
+            QStringList vals = value.split(',', Qt::SkipEmptyParts);
             id = vals[0];
             if (id.size() != 2)
             {
@@ -1004,7 +1004,7 @@ void SubDVD::readIdx(int idxToRead)
             {
                 subtitleProcessor->printWarning(QString("Illegal language id: %1\n").arg(id));
             }
-            vals = value.split(':', QString::SkipEmptyParts);
+            vals = value.split(':', Qt::SkipEmptyParts);
             if (vals.size() == 1)
             {
                 subtitleProcessor->printError(QString("Missing index key: %1\n").arg(value));
@@ -1052,7 +1052,7 @@ void SubDVD::readIdx(int idxToRead)
             if (key == "timestamp")
             {
                 QString vs;
-                QStringList vals = value.split(',', QString::SkipEmptyParts);
+                QStringList vals = value.split(',', Qt::SkipEmptyParts);
                 if (vals.isEmpty() || vals.size() <= 1)
                 {
                     throw QString("Illegal timestamp entry: %1").arg(value);
@@ -1065,7 +1065,7 @@ void SubDVD::readIdx(int idxToRead)
                     throw QString("Illegal timestamp: %1").arg(vals[0]);
                 }
                 vs = vals[1].trimmed().toLower();
-                vals = vs.split(':', QString::SkipEmptyParts);
+                vals = vs.split(':', Qt::SkipEmptyParts);
                 if (vals.isEmpty() || vals.size() <= 1)
                 {
                     throw QString("Missing filepos: %1").arg(value);

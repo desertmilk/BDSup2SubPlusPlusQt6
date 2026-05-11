@@ -26,7 +26,7 @@
 
 #include <QObject>
 #include <QFile>
-#include <QtXml/QXmlDefaultHandler>
+#include <QXmlDefaultHandler>
 #include <QStringList>
 #include <QString>
 #include <QVector>
