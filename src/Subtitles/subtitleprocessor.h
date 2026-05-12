@@ -481,8 +481,6 @@ public:
     void storeFreeScale(double xScale, double yScale);
     void storeSettings();
 
-    QSharedPointer<Substream> getSubstream() { return substream; }
-
 signals:
     void windowTitleChanged(const QString &newTitle);
     void progressDialogTitleChanged(const QString &newTitle);
@@ -529,12 +527,12 @@ private:
 
     QVector<SubPicture*> subPictures;
 
-    int languageIdxRead = false;
+    int languageIdxRead;
     int maxProgress = 0;
     double lastProgress = 0.0;
-    int numberOfErrors = 0, numberOfWarnings = 0;
+    int numberOfErrors, numberOfWarnings;
     int languageIdx = 0;
-    bool languageIdxSet = false;
+    int languageIdxSet = false;
     int alphaCrop = 14;
     int alphaThreshold = 80;
     int cropOfsY = 0;

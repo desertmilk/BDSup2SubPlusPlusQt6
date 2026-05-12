@@ -65,7 +65,7 @@ class SupXML : public QObject, public Substream
 
         Resolution getResolution (QString string);
 
-        SubPictureXML *subPicture = nullptr;
+        SubPictureXML *subPicture;
 
         SupXML* parent;
 
@@ -89,7 +89,7 @@ public:
 
     qint64 endTime(int index);
     qint64 startTime(int index);
-    qint64 startOffset(int /*index*/) { return 0; }
+    qint64 startOffset(int index) { return 0; }
 
     double getFps() { return fps; }
 

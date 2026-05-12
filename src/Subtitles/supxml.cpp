@@ -145,7 +145,7 @@ void SupXML::decode(int index)
     }
     else
     {
-        const QList<QRect> &imageRects = subPic.imageSizes().values();
+        QMap<int, QRect> &imageRects = subPic.imageSizes();
         int resultXOffset = imageRects[0].x() > imageRects[1].x() ? imageRects[1].x() : imageRects[0].x();
         int resultYOffset = imageRects[0].y() > imageRects[1].y() ? imageRects[1].y() : imageRects[0].y();
         int width = 0, height = 0;
@@ -195,32 +195,31 @@ void SupXML::decode(int index)
         {
             height = 2;
         }
-
         _bitmap = _bitmap.crop(bounds.topLeft().x(), bounds.topLeft().y(), width, height);
         QMap<int, QRect> &imageRects = subPic.imageSizes();
         QMap<int, QRect> &windowRects = subPic.windowSizes();
 
-        int xOffset = abs(subPic.x() - (subPic.originalX() + bounds.topLeft().x()));
-        int yOffset = abs(subPic.y() - (subPic.originalY() + bounds.topLeft().y()));
+        int newX = subPic.x() - (subPic.originalX() + bounds.topLeft().x());
+        int newY = subPic.y() - (subPic.originalY() + bounds.topLeft().y());
         double widthScale = (double) width / subPic.imageWidth();
         double heightScale = (double) height / subPic.imageHeight();
 
         // update picture
-        for (QRect imageRect : imageRects)
+        for (int i = 0; i < imageRects.size(); ++i)
         {
-            imageRect.setX(imageRect.x() + xOffset);
-            imageRect.setY(imageRect.y() + yOffset);
-            imageRect.setWidth((int) ((imageRect.width() * widthScale) + .5));
-            imageRect.setHeight((int) ((imageRect.height() * heightScale) + .5));
+            imageRects[i].setX(imageRects[i].x() + newX);
+            imageRects[i].setY(imageRects[i].y() + newY);
+            imageRects[i].setWidth((int) ((imageRects[i].width() * widthScale) + .5));
+            imageRects[i].setHeight((int) ((imageRects[i].height() * heightScale) + .5));
         }
 
         // update picture
-        for (QRect windowRect : windowRects)
+        for (int i = 0; i < windowRects.size(); ++i)
         {
-            windowRect.setX(windowRect.x() + xOffset);
-            windowRect.setY(windowRect.y() + yOffset);
-            windowRect.setWidth((int) ((windowRect.width() * widthScale) + .5));
-            windowRect.setHeight((int) ((windowRect.height() * heightScale) + .5));
+            windowRects[i].setX(windowRects[i].x() + newX);
+            windowRects[i].setY(windowRects[i].y() + newY);
+            windowRects[i].setWidth((int) ((windowRects[i].width() * widthScale) + .5));
+            windowRects[i].setHeight((int) ((windowRects[i].height() * heightScale) + .5));
         }
     }
 }
@@ -333,18 +332,17 @@ void SupXML::writeXml(QString filename, QVector<SubPicture*> pics)
             numberOfImages = imageRects.size();
         }
 
-        int num_pic = 0;
-        for (QRect imageRect : imageRects)
+        for (int j = 0; j < numberOfImages; ++j)
         {
             QFileInfo info(pname);
             out->write((QString("      <Graphic Width=\"%1\" Height=\"%2\" X=\"%3\" Y=\"%4\">%5</Graphic>\n")
-                        .arg(QString::number(imageRect.width()))
-                        .arg(QString::number(imageRect.height()))
-                        .arg(QString::number(imageRect.x()))
-                        .arg(QString::number(imageRect.y()))
+                        .arg(QString::number(imageRects[j].width()))
+                        .arg(QString::number(imageRects[j].height()))
+                        .arg(QString::number(imageRects[j].x()))
+                        .arg(QString::number(imageRects[j].y()))
                         .arg(QString("%1_%2.png")
                              .arg(info.completeBaseName())
-                             .arg(QString::number(num_pic++))))
+                             .arg(QString::number(j))))
                        .toLatin1());
         }
         out->write("    </Event>\n");
@@ -382,7 +380,7 @@ bool SupXML::XmlHandler::characters(const QString &ch)
 }
 
 
-bool SupXML::XmlHandler::endElement(const QString &/*namespaceURI*/, const QString &/*localName*/, const QString &qName)
+bool SupXML::XmlHandler::endElement(const QString &namespaceURI, const QString &localName, const QString &qName)
 {
     XmlState endState = findState(qName.toLower());
     if (state == XmlState::GRAPHIC && endState == XmlState::GRAPHIC)
@@ -392,7 +390,7 @@ bool SupXML::XmlHandler::endElement(const QString &/*namespaceURI*/, const QStri
     return true;
 }
 
-bool SupXML::XmlHandler::startElement(const QString &/*namespaceURI*/, const QString &/*localName*/,
+bool SupXML::XmlHandler::startElement(const QString &namespaceURI, const QString &localName,
                                       const QString &qName, const QXmlAttributes &atts)
 {
     state = findState(qName.toLower());
@@ -403,7 +401,7 @@ bool SupXML::XmlHandler::startElement(const QString &/*namespaceURI*/, const QSt
         parent->subtitleProcessor->printError("BDN tag missing\n");
     }
 
-    txt.clear();
+    txt = QString("");
 
     switch ((int)state)
     {
