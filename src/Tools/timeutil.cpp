@@ -28,6 +28,11 @@ TimeUtil::TimeUtil()
 
 qint64 TimeUtil::timeStrXmlToPTS(QString s, double fps)
 {
+    if (s.isEmpty())
+    {
+        return -1;
+    }
+
     QRegularExpressionMatch match = timePattern.match(s);
     if (match.hasMatch())
     {
@@ -56,7 +61,17 @@ qint64 TimeUtil::timeStrXmlToPTS(QString s, double fps)
 
 qint64 TimeUtil::timeStrToPTS(QString s, bool *ok)
 {
+    if (ok == nullptr)
+    {
+        return -1;
+    }
+
     *ok = false;
+    if (s.isEmpty())
+    {
+        return -1;
+    }
+
     bool timestampIsNegative = s[0] == '-';
     QString temp = timestampIsNegative ? s.mid(1) : s;
     QRegularExpressionMatch match = timePattern.match(temp);

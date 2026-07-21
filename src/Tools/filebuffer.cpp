@@ -32,8 +32,8 @@ FileBuffer::FileBuffer(QString inFileName) :
     }
 
     buf.resize(length);
-    file->read(buf.data(), length);
-    if (buf.isEmpty() && file->error() != QFile::NoError)
+    const qint64 bytesRead = file->read(buf.data(), length);
+    if (bytesRead != length || (length > 0 && file->error() != QFile::NoError))
     {
         throw QString("IO error at offset +%1 of file: '%2'")
                 .arg(QString::number(0)).arg(fileName);

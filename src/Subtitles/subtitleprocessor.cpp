@@ -79,11 +79,17 @@ SubtitleProcessor::~SubtitleProcessor()
 
 void SubtitleProcessor::setOutputStreamToStdError()
 {
+    delete outStream;
     outStream = new QTextStream(stderr);
 }
 
 void SubtitleProcessor::SetValuesFromSettings()
 {
+    if (settings == nullptr)
+    {
+        return;
+    }
+
     QStringList keys = settings->allKeys();
     verbatim = settings->value("verbatim", QVariant(false)).toBool();
     writePGCEditPal = settings->value("writePGCEditPal", QVariant(false)).toBool();
@@ -118,9 +124,9 @@ void SubtitleProcessor::SetValuesFromSettings()
     {
         if (!fpsSrcCertain)
         {
-            fpsSrc = settings->value("fpsSrc", QVariant(fpsSrc)).toBool();
+            fpsSrc = settings->value("fpsSrc", QVariant(fpsSrc)).toDouble();
         }
-        fpsTrg = settings->value("fpsTrg", QVariant(fpsTrg)).toBool();
+        fpsTrg = settings->value("fpsTrg", QVariant(fpsTrg)).toDouble();
     }
 
     delayPTS = settings->value("delayPTS", QVariant(delayPTS)).toInt();

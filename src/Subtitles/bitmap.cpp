@@ -144,7 +144,7 @@ Bitmap Bitmap::crop(int x1, int y1, int width, int height)
 
 int Bitmap::primaryColorIndex(Palette &palette, int alphaThreshold)
 {
-    int *histogram = (int*) calloc(palette.size(), sizeof(int));
+    QVector<int> histogram(palette.size(), 0);
     int height = subtitleImage.height();
     int width = subtitleImage.width();
     uchar* pixels = subtitleImage.scanLine(0);
@@ -183,7 +183,6 @@ int Bitmap::primaryColorIndex(Palette &palette, int alphaThreshold)
             color = i;
         }
     }
-    free(histogram);
     return color;
 }
 
