@@ -15,10 +15,10 @@ Install Qt6 development packages and build tools for your distribution. For Debi
 
 ```bash
 sudo apt update
-sudo apt install build-essential qt6-base-dev qt6-tools-dev qt6-qmake
+sudo apt install build-essential qt6-base-dev qt6-base-dev-tools qt6-tools-dev
 ```
 
-If your platform provides `qt6_qmake` instead of `qmake`, use that executable.
+On Ubuntu, the `qt6-qmake` package is not provided; use the `qmake6` executable from the `qt6-base-dev-tools` package.
 
 ### Build steps
 
@@ -28,7 +28,7 @@ From the repository root:
 cd /path/to/BDSup2SubPlusPlus
 mkdir -p build
 cd build
-qt6_qmake ../src/bdsup2sub++.pro   # or qmake if it is the Qt6 qmake
+qmake6 ../src/bdsup2sub++.pro
 make
 ```
 
