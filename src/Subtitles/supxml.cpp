@@ -27,8 +27,8 @@
 #include "types.h"
 #include <QImage>
 #include <QFileInfo>
-#include <QtXml/QXmlSimpleReader>
-#include <QtXml/QXmlInputSource>
+#include <QXmlSimpleReader>
+#include <QXmlInputSource>
 #include <QRect>
 #include <QDir>
 #include <QPainter>

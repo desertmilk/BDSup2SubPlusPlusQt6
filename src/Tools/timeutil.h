@@ -22,8 +22,7 @@
 
 #include <QString>
 #include <QRegExp>
-
-template <typename T> class QVector;
+#include <QVector>
 
 static QRegExp timePattern = QRegExp("(\\d+):(\\d+):(\\d+)[:\\.](\\d+)");
 

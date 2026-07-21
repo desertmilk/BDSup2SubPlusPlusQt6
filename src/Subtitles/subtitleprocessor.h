@@ -454,6 +454,7 @@ public:
     double getFPS(QString string);
     double getDefaultFPS(Resolution resolution);
     QImage getSrcImage();
+    QImage getSrcImage(int index);
     QString getSrcInfoStr(int index);
     QString getTrgInfoStr(int index);
     int getTrgWidth(int index);
@@ -602,7 +603,6 @@ private:
     QVector<int> getResolution(Resolution resolution);
     void determineFramePalette(int index);
     bool updateTrgPic(int index);
-    QImage getSrcImage(int index);
 };
 
 #endif // SUBTITLEPROCESSOR_H
