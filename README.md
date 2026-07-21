@@ -42,6 +42,14 @@ After a successful build:
 ./bdsup2sub++
 ```
 
+For headless or CI environments, run the command-line conversion with Qt's offscreen platform backend:
+
+```bash
+QT_QPA_PLATFORM=offscreen ./bdsup2sub++ --no-verbose -o output.sub input.sup
+```
+
+This is useful for converting a SUP file to SUB/IDX without launching the GUI.
+
 ### Notes
 
 - The project uses Qt Widgets and Qt XML support.
