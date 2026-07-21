@@ -206,10 +206,11 @@ void BDSup2Sub::onLoadingSubtitleFileFinished(const QString &errorString)
             subtitleProcessor->scanSubtitles();
             if (subtitleProcessor->getMoveCaptions())
             {
-                QThread *workerThread = new QThread;
+                QThread *workerThread = new QThread(this);
                 subtitleProcessor->moveToThread(workerThread);
                 connect(workerThread, SIGNAL(started()), subtitleProcessor, SLOT(moveAll()));
-                connect(subtitleProcessor, SIGNAL(moveAllFinished(QString)), workerThread, SLOT(deleteLater()));
+                connect(subtitleProcessor, SIGNAL(moveAllFinished(QString)), workerThread, SLOT(quit()));
+                connect(workerThread, SIGNAL(finished()), workerThread, SLOT(deleteLater()));
 
                 subtitleProcessor->setActive(true);
                 workerThread->start();
@@ -622,12 +623,13 @@ void BDSup2Sub::saveFile()
             }
         }
         connectSubtitleProcessor();
-        QThread *workerThread = new QThread;
+        QThread *workerThread = new QThread(this);
         subtitleProcessor->setLoadPath(fileName);
         subtitleProcessor->moveToThread(workerThread);
 
         connect(workerThread, SIGNAL(started()), subtitleProcessor, SLOT(createSubtitleStream()));
-        connect(subtitleProcessor, SIGNAL(writingSubtitleFinished(QString)), workerThread, SLOT(deleteLater()));
+        connect(subtitleProcessor, SIGNAL(writingSubtitleFinished(QString)), workerThread, SLOT(quit()));
+        connect(workerThread, SIGNAL(finished()), workerThread, SLOT(deleteLater()));
 
         subtitleProcessor->setActive(true);
         workerThread->start();
@@ -709,10 +711,11 @@ void BDSup2Sub::loadSubtitleFile()
 
     connect(subtitleProcessor, SIGNAL(addLanguage(QString)), this, SLOT(onAddLanguage(QString)));
 
-    QThread *workerThread = new QThread;
+    QThread *workerThread = new QThread(this);
     subtitleProcessor->moveToThread(workerThread);
     connect(workerThread, SIGNAL(started()), subtitleProcessor, SLOT(readSubtitleStream()));
-    connect(subtitleProcessor, SIGNAL(loadingSubtitleFinished(QString)), workerThread, SLOT(deleteLater()));
+    connect(subtitleProcessor, SIGNAL(loadingSubtitleFinished(QString)), workerThread, SLOT(quit()));
+    connect(workerThread, SIGNAL(finished()), workerThread, SLOT(deleteLater()));
 
     subtitleProcessor->setActive(true);
     workerThread->start();
@@ -2365,10 +2368,11 @@ void BDSup2Sub::on_subtitleLanguageComboBox_currentIndexChanged(int index)
 
     connectSubtitleProcessor();
 
-    QThread *workerThread = new QThread;
+    QThread *workerThread = new QThread(this);
     subtitleProcessor->moveToThread(workerThread);
     connect(workerThread, SIGNAL(started()), subtitleProcessor, SLOT(readSubtitleStream()));
-    connect(subtitleProcessor, SIGNAL(loadingSubtitleFinished(QString)), workerThread, SLOT(deleteLater()));
+    connect(subtitleProcessor, SIGNAL(loadingSubtitleFinished(QString)), workerThread, SLOT(quit()));
+    connect(workerThread, SIGNAL(finished()), workerThread, SLOT(deleteLater()));
 
     subtitleProcessor->setActive(true);
     workerThread->start();
