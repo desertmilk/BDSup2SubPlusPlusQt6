@@ -29,7 +29,8 @@
 #include <QKeyEvent>
 #include <QDoubleValidator>
 #include <QIntValidator>
-#include <QRegExpValidator>
+#include <QRegularExpression>
+#include <QRegularExpressionValidator>
 
 EditDialog::EditDialog(QWidget *parent, SubtitleProcessor* subtitleProcessor) :
     QDialog(parent),
@@ -67,9 +68,9 @@ EditDialog::EditDialog(QWidget *parent, SubtitleProcessor* subtitleProcessor) :
     ui->xOffsetLineEdit->setValidator(xOffsetValidator);
     yOffsetValidator = new QIntValidator;
     ui->yOffsetLineEdit->setValidator(yOffsetValidator);
-    startTimeValidator = new QRegExpValidator(TimeUtil::getTimePattern());
+    startTimeValidator = new QRegularExpressionValidator(TimeUtil::getTimePattern());
     ui->startTimeLineEdit->setValidator(startTimeValidator);
-    endTimeValidator = new QRegExpValidator(TimeUtil::getTimePattern());
+    endTimeValidator = new QRegularExpressionValidator(TimeUtil::getTimePattern());
     ui->endTimeLineEdit->setValidator(endTimeValidator);
 
     this->resize(minimumWidth + 36, minimumHeight + 280);

@@ -26,7 +26,6 @@
 
 #include <QObject>
 #include <QFile>
-#include <QXmlDefaultHandler>
 #include <QStringList>
 #include <QString>
 #include <QVector>
@@ -36,44 +35,12 @@ class SubtitleProcessor;
 class SubPictureXML;
 class QImage;
 class BitStream;
-class XmlHandler;
 
 enum class Resolution : int;
 
 class SupXML : public QObject, public Substream
 {
     Q_OBJECT
-
-    class XmlHandler : public QXmlDefaultHandler
-    {
-    public:
-        XmlHandler(SupXML* parent) { this->parent = parent; }
-
-        bool characters(const QString &ch);
-        bool endElement(const QString &namespaceURI, const QString &localName, const QString &qName);
-        bool startElement(const QString &namespaceURI, const QString &localName, const QString &qName, const QXmlAttributes &atts);
-
-    private:
-
-        bool valid = false;
-
-        QStringList xmlStates = { "bdn", "description", "name", "language", "format", "events", "event", "graphic" };
-
-        QString txt;
-
-        QVector<int> getResolutions(Resolution resolution);
-
-        Resolution getResolution (QString string);
-
-        SubPictureXML *subPicture;
-
-        SupXML* parent;
-
-        enum class XmlState { BDN, DESCRIPT, NAME, LANGUAGE, FORMAT, EVENTS, EVENT, GRAPHIC, UNKNOWN };
-
-        XmlState state;
-        XmlState findState(QString string);
-    };
 
 public:
     SupXML(QString fileName, SubtitleProcessor* subtitleProcessor);
