@@ -29,11 +29,11 @@
 #endif
 #include <QColor>
 #include <QIntValidator>
+#include <QCommandLineParser>
 
 class SubtitleProcessor;
 class ProgressDialog;
 class QSettings;
-class QxtCommandOptions;
 class QTextStream;
 
 namespace Ui {
@@ -80,10 +80,9 @@ private:
     QPalette* errorBackground;
     QPalette* okBackground;
 
-    QxtCommandOptions* options;
-
     QSettings* settings = 0;
     bool fromCLI = false;
+    QCommandLineParser parser;
 
     QString filter = tr("All Files (*.*);;Subtitle Files (*.idx *.ifo *.sub *.sup *.xml)");
     QString ifoFilter = tr("IFO File (*.ifo)");

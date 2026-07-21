@@ -28,9 +28,14 @@ TimeUtil::TimeUtil()
 
 qint64 TimeUtil::timeStrXmlToPTS(QString s, double fps)
 {
-    if (timePattern.exactMatch(s) && timePattern.indexIn(s) != -1)
+    QRegularExpressionMatch match = timePattern.match(s);
+    if (match.hasMatch())
     {
-        QStringList m = timePattern.capturedTexts();
+        QStringList m;
+        for (int i = 0; i <= 4; ++i)
+        {
+            m.append(match.captured(i));
+        }
         qint64 hour = m[1].toInt();
         qint64 min = m[2].toInt();
         qint64 sec = m[3].toInt();
@@ -54,9 +59,14 @@ qint64 TimeUtil::timeStrToPTS(QString s, bool *ok)
     *ok = false;
     bool timestampIsNegative = s[0] == '-';
     QString temp = timestampIsNegative ? s.mid(1) : s;
-    if (timePattern.exactMatch(temp) && timePattern.indexIn(temp) != -1)
+    QRegularExpressionMatch match = timePattern.match(temp);
+    if (match.hasMatch())
     {
-        QStringList m = timePattern.capturedTexts();
+        QStringList m;
+        for (int i = 0; i <= 4; ++i)
+        {
+            m.append(match.captured(i));
+        }
         qint64 hour = m[1].toInt();
         qint64 min = m[2].toInt();
         qint64 sec = m[3].toInt();

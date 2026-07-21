@@ -27,8 +27,7 @@
 #include "types.h"
 #include <QImage>
 #include <QFileInfo>
-#include <QXmlSimpleReader>
-#include <QXmlInputSource>
+#include <QXmlStreamReader>
 #include <QRect>
 #include <QDir>
 #include <QPainter>
@@ -251,16 +250,208 @@ SubPicture *SupXML::subPicture(int index)
 
 void SupXML::readAllImages()
 {
-    QXmlSimpleReader xmlReader;
-    QXmlInputSource *source = new QXmlInputSource(xmlFile.data());
-
-    XmlHandler *handler = new XmlHandler(this);
-    xmlReader.setContentHandler(handler);
-    xmlReader.setErrorHandler(handler);
-
-    if (!xmlReader.parse(source))
+    if (!xmlFile->open(QIODevice::ReadOnly | QIODevice::Text))
     {
-        throw QString("Failed to parse file: '%1'").arg(xmlFileName);
+        throw QString("File: '%1' can not be opened for reading.").arg(xmlFileName);
+    }
+
+    QXmlStreamReader xml(xmlFile.data());
+    SubPictureXML *subPicture = nullptr;
+    QString currentGraphicText;
+    bool valid = false;
+    bool inGraphic = false;
+
+    while (!xml.atEnd())
+    {
+        QXmlStreamReader::TokenType token = xml.readNext();
+
+        if (token == QXmlStreamReader::StartElement)
+        {
+            QString elementName = xml.name().toString().toLower();
+            const QXmlStreamAttributes attrs = xml.attributes();
+
+            if (elementName == "bdn")
+            {
+                if (valid)
+                {
+                    subtitleProcessor->printError("BDN must be used only once\n");
+                }
+                else
+                {
+                    valid = true;
+                }
+            }
+            else if (elementName == "name")
+            {
+                QString at = attrs.value("Title").toString();
+                if (!at.isEmpty())
+                {
+                    title = at;
+                    subtitleProcessor->print(QString("Title: %1\n").arg(title));
+                }
+            }
+            else if (elementName == "language")
+            {
+                QString at = attrs.value("Code").toString();
+                if (!at.isEmpty())
+                {
+                    language = at;
+                    subtitleProcessor->print(QString("Language: %1\n").arg(language));
+                }
+            }
+            else if (elementName == "format")
+            {
+                QString at = attrs.value("FrameRate").toString();
+                if (!at.isEmpty())
+                {
+                    fps = subtitleProcessor->getFPS(at);
+                    fpsXml = XmlFps(fps);
+                    subtitleProcessor->print(QString("fps: %1\n").arg(QString::number(fps, 'g', 6)));
+                }
+                at = attrs.value("VideoFormat").toString();
+                if (!at.isEmpty())
+                {
+                    QString res = at;
+                    if (res.length() == 4 && res[0] != '7')
+                    {
+                        res = res.replace('p', 'i');
+                    }
+                    resolution = subtitleProcessor->getResolution(res);
+                    subtitleProcessor->print(QString("Language: %1\n").arg(res));
+                }
+            }
+            else if (elementName == "events")
+            {
+                QString at = attrs.value("NumberofEvents").toString();
+                if (!at.isEmpty())
+                {
+                    bool ok;
+                    int n = at.toInt(&ok);
+                    n = ok ? n : -1;
+                    if (n > 0)
+                    {
+                        numToImport = n;
+                        emit maxProgressChanged(numToImport);
+                    }
+                    else
+                    {
+                        throw QString("The NumberofEvents in the XML file is invalid.");
+                    }
+                }
+            }
+            else if (elementName == "event")
+            {
+                if (!valid)
+                {
+                    subtitleProcessor->printError("BDN tag missing\n");
+                }
+
+                subPictures.push_back(SubPictureXML());
+                int num = subPictures.size();
+                subPicture = &subPictures[num - 1];
+
+                subtitleProcessor->printX(QString("#%1\n").arg(QString::number(num)));
+                emit currentProgressChanged(num);
+
+                QString at = attrs.value("InTC").toString();
+                if (!at.isEmpty())
+                {
+                    subPicture->setStartTime(TimeUtil::timeStrXmlToPTS(at, fpsXml));
+                    if (subPicture->startTime() == -1)
+                    {
+                        subPicture->setStartTime(0);
+                        subtitleProcessor->printWarning(QString("Invalid start time %1\n").arg(at));
+                    }
+                }
+                at = attrs.value("OutTC").toString();
+                if (!at.isEmpty())
+                {
+                    subPicture->setEndTime(TimeUtil::timeStrXmlToPTS(at, fpsXml));
+                    if (subPicture->endTime() == -1)
+                    {
+                        subPicture->setEndTime(0);
+                        subtitleProcessor->printWarning(QString("Invalid end time %1\n").arg(at));
+                    }
+                }
+                if (fps != fpsXml)
+                {
+                    subPicture->setStartTime(((subPicture->startTime() * 1001) + 500) / 1000);
+                    subPicture->setEndTime(((subPicture->endTime() * 1001) + 500) / 1000);
+                }
+                at = attrs.value("Forced").toString();
+                if (!at.isEmpty())
+                {
+                    subPicture->setForced(at.toLower() == "true");
+                }
+                else
+                {
+                    subPicture->setForced(false);
+                }
+                if (subPicture->isForced())
+                {
+                    _numForcedFrames++;
+                }
+                QVector<int> dim = subtitleProcessor->getResolutions(resolution);
+                subPicture->setScreenWidth(dim.at(0));
+                subPicture->setScreenHeight(dim.at(1));
+            }
+            else if (elementName == "graphic")
+            {
+                if (subPicture == nullptr)
+                {
+                    continue;
+                }
+
+                bool ok;
+                int width = attrs.value("Width").toInt(&ok);
+                width = ok ? width : -1;
+                int height = attrs.value("Height").toInt(&ok);
+                height = ok ? height : -1;
+                int x = attrs.value("X").toInt(&ok);
+                x = ok ? x : -1;
+                int y = attrs.value("Y").toInt(&ok);
+                y = ok ? y : -1;
+
+                QRect rect(x, y, width, height);
+                subPicture->setNumCompObjects(subPicture->numCompObjects() + 1);
+                subPicture->setNumberOfWindows(subPicture->numberOfWindows() + 1);
+                int objectId = subPicture->numCompObjects() - 1;
+                subPicture->objectIDs().push_back(objectId);
+                subPicture->imageRects[objectId] = rect;
+                subPicture->scaledImageRects[objectId] = rect;
+                subPicture->windowRects[objectId] = rect;
+                subPicture->scaledWindowRects[objectId] = rect;
+                subPicture->setOriginal();
+
+                currentGraphicText.clear();
+                inGraphic = true;
+            }
+        }
+        else if (token == QXmlStreamReader::Characters)
+        {
+            if (inGraphic && subPicture != nullptr)
+            {
+                currentGraphicText += xml.text().toString();
+            }
+        }
+        else if (token == QXmlStreamReader::EndElement)
+        {
+            QString elementName = xml.name().toString().toLower();
+            if (elementName == "graphic")
+            {
+                if (subPicture != nullptr)
+                {
+                    subPicture->setFileName(pathName + currentGraphicText.trimmed());
+                }
+                inGraphic = false;
+                currentGraphicText.clear();
+            }
+        }
+    }
+
+    if (xml.hasError())
+    {
+        throw QString("Failed to parse file: '%1' - %2").arg(xmlFileName).arg(xml.errorString());
     }
 
     subtitleProcessor->print(QString("\nDetected %1 forced captions.\n").arg(QString::number(_numForcedFrames)));
@@ -373,228 +564,3 @@ double SupXML::XmlFps(double fps)
 }
 
 
-bool SupXML::XmlHandler::characters(const QString &ch)
-{
-    txt += ch;
-    return true;
-}
-
-
-bool SupXML::XmlHandler::endElement(const QString &namespaceURI, const QString &localName, const QString &qName)
-{
-    XmlState endState = findState(qName.toLower());
-    if (state == XmlState::GRAPHIC && endState == XmlState::GRAPHIC)
-    {
-        subPicture->setFileName(parent->pathName + txt.trimmed());
-    }
-    return true;
-}
-
-bool SupXML::XmlHandler::startElement(const QString &namespaceURI, const QString &localName,
-                                      const QString &qName, const QXmlAttributes &atts)
-{
-    state = findState(qName.toLower());
-    QString at;
-
-    if (state != SupXML::XmlHandler::XmlState::BDN && !valid)
-    {
-        parent->subtitleProcessor->printError("BDN tag missing\n");
-    }
-
-    txt = QString("");
-
-    switch ((int)state)
-    {
-    case (int)SupXML::XmlHandler::XmlState::UNKNOWN:
-    {
-         parent->subtitleProcessor->printError(QString("Unknown tag %1\n").arg(qName));
-    } break;
-    case (int)SupXML::XmlHandler::XmlState::BDN:
-    {
-        if (valid)
-        {
-            parent->subtitleProcessor->printError("BDN must be used only once\n");
-        }
-        else
-        {
-            valid = true;
-        }
-    } break;
-    case (int)SupXML::XmlHandler::XmlState::NAME:
-    {
-        at = atts.value("Title");
-        if (!at.isEmpty())
-        {
-            parent->title = at;
-            parent->subtitleProcessor->print(QString("Title: %1\n").arg(parent->title));
-        }
-    } break;
-    case (int)SupXML::XmlHandler::XmlState::LANGUAGE:
-    {
-        at = atts.value("Code");
-        if (!at.isEmpty())
-        {
-            parent->language = at;
-            parent->subtitleProcessor->print(QString("Language: %1\n").arg(parent->language));
-        }
-    } break;
-    case (int)SupXML::XmlHandler::XmlState::FORMAT:
-    {
-        at = atts.value("FrameRate");
-        if (!at.isEmpty())
-        {
-            parent->fps = parent->subtitleProcessor->getFPS(at);
-            parent->fpsXml = parent->XmlFps(parent->fps);
-            parent->subtitleProcessor->print(QString("fps: %1\n").arg(QString::number(parent->fps, 'g', 6)));
-        }
-        at = atts.value("VideoFormat");
-        if (!at.isEmpty())
-        {
-            QString res = QString(at);
-            if (res.length() == 4 && res[0] != '7')
-            {
-                res = res.replace('p', 'i');
-            }
-            parent->resolution = parent->subtitleProcessor->getResolution(res);
-            parent->subtitleProcessor->print(QString("Language: %1\n").arg(res));
-        }
-    } break;
-    case (int)SupXML::XmlHandler::XmlState::EVENTS:
-    {
-        at = atts.value("NumberofEvents");
-        if (!at.isEmpty())
-        {
-            bool ok;
-            int n = at.toInt(&ok);
-            n = ok ? n : -1;
-            if (n > 0)
-            {
-                parent->numToImport = n;
-                emit parent->maxProgressChanged(parent->numToImport);
-            }
-            else
-            {
-                throw QString("The NumberofEvents in the XML file is invalid.");
-            }
-        }
-    } break;
-    case (int)SupXML::XmlHandler::XmlState::EVENT:
-    {
-        parent->subPictures.push_back(SubPictureXML());
-        int num  = parent->subPictures.size();
-        subPicture = &parent->subPictures[num - 1];
-
-        parent->subtitleProcessor->printX(QString("#%1\n").arg(QString::number(num)));
-
-        emit parent->currentProgressChanged(num);
-        at = atts.value("InTC");
-
-        if (!at.isEmpty())
-        {
-            subPicture->setStartTime(TimeUtil::timeStrXmlToPTS(at, parent->fpsXml));
-            if (subPicture->startTime() == -1)
-            {
-                subPicture->setStartTime(0);
-                parent->subtitleProcessor->printWarning(QString("Invalid start time %1\n").arg(at));
-            }
-        }
-        at = atts.value("OutTC");
-        if (!at.isEmpty())
-        {
-            subPicture->setEndTime(TimeUtil::timeStrXmlToPTS(at, parent->fpsXml));
-            if (subPicture->endTime() == -1)
-            {
-                subPicture->setEndTime(0);
-                parent->subtitleProcessor->printWarning(QString("Invalid end time %1\n").arg(at));
-            }
-        }
-        if (parent->fps != parent->fpsXml)
-        {
-            subPicture->setStartTime(((subPicture->startTime() * 1001) + 500) / 1000);
-            subPicture->setEndTime(((subPicture->endTime() * 1001) + 500) / 1000);
-        }
-        at = atts.value("Forced");
-        if (!at.isEmpty())
-        {
-            subPicture->setForced(at.toLower() == "true");
-        }
-        else
-        {
-            subPicture->setForced(false);
-        }
-        if (subPicture->isForced())
-        {
-            parent->_numForcedFrames++;
-        }
-        QVector<int> dim = parent->subtitleProcessor->getResolutions(parent->resolution);
-        subPicture->setScreenWidth(dim.at(0));
-        subPicture->setScreenHeight(dim.at(1));
-    } break;
-    case (int)SupXML::XmlHandler::XmlState::GRAPHIC:
-    {
-        bool ok;
-        int width = atts.value("Width").toInt(&ok);
-        width = ok ? width : -1;
-
-        int height = atts.value("Height").toInt(&ok);
-        height = ok ? height : -1;
-
-        int x = atts.value("X").toInt(&ok);
-        x = ok ? x : -1;
-
-        int y = atts.value("Y").toInt(&ok);
-        y = ok ? y : -1;
-
-        QRect rect(x, y, width, height);
-        subPicture->setNumCompObjects(subPicture->numCompObjects() + 1);
-        subPicture->setNumberOfWindows(subPicture->numberOfWindows() + 1);
-        int objectId = subPicture->numCompObjects() - 1;
-        subPicture->objectIDs().push_back(objectId);
-        subPicture->imageRects[objectId] = rect;
-        subPicture->scaledImageRects[objectId] = rect;
-        subPicture->windowRects[objectId] = rect;
-        subPicture->scaledWindowRects[objectId] = rect;
-
-        subPicture->setOriginal();
-    } break;
-    }
-
-    return true;
-}
-
-SupXML::XmlHandler::XmlState SupXML::XmlHandler::findState(QString string)
-{
-    if (string == "bdn")
-    {
-        return SupXML::XmlHandler::XmlState::BDN;
-    }
-    if (string == "description")
-    {
-        return SupXML::XmlHandler::XmlState::DESCRIPT;
-    }
-    if (string == "name")
-    {
-        return SupXML::XmlHandler::XmlState::NAME;
-    }
-    if (string == "language")
-    {
-        return SupXML::XmlHandler::XmlState::LANGUAGE;
-    }
-    if (string == "format")
-    {
-        return SupXML::XmlHandler::XmlState::FORMAT;
-    }
-    if (string == "events")
-    {
-        return SupXML::XmlHandler::XmlState::EVENTS;
-    }
-    if (string == "event")
-    {
-        return SupXML::XmlHandler::XmlState::EVENT;
-    }
-    if (string == "graphic")
-    {
-        return SupXML::XmlHandler::XmlState::GRAPHIC;
-    }
-    return SupXML::XmlHandler::XmlState::UNKNOWN;
-}

@@ -19,10 +19,9 @@ greaterThan(QT_VER_MAJ, 4) {
 QT       -= gui
 QT	 += widgets
 }
-CONFIG   += qt console qxt
+CONFIG   += qt6 console c++17
 #contains(QT_CONFIG,c++11): CONFIG += c++11
-QXT      += core
-QMAKE_CXXFLAGS += -std=c++11
+#QMAKE_CXXFLAGS += -std=c++11
 TARGET = bdsup2sub++
 TEMPLATE = app
 

@@ -21,10 +21,10 @@
 #define TIMEUTIL_H
 
 #include <QString>
-#include <QRegExp>
+#include <QRegularExpression>
 #include <QVector>
 
-static QRegExp timePattern = QRegExp("(\\d+):(\\d+):(\\d+)[:\\.](\\d+)");
+static QRegularExpression timePattern("(\\d+):(\\d+):(\\d+)[:\\.](\\d+)");
 
 class TimeUtil
 {
@@ -34,7 +34,7 @@ public:
     static qint64 timeStrToPTS(QString s, bool *ok = 0);
     static qint64 timeStrXmlToPTS(QString s, double fps);
 
-    static QRegExp getTimePattern() { return timePattern; }
+    static QRegularExpression getTimePattern() { return timePattern; }
 
     static QString ptsToTimeStrXml(qint64 pts, double fps);
     static QString ptsToTimeStr(qint64 pts);

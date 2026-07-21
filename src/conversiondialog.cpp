@@ -31,7 +31,8 @@
 #endif
 
 #include <QDoubleValidator>
-#include <QRegExpValidator>
+#include <QRegularExpression>
+#include <QRegularExpressionValidator>
 #include <QPalette>
 #include <QKeyEvent>
 #include <QSettings>
@@ -47,9 +48,9 @@ ConversionDialog::ConversionDialog(QWidget *parent, SubtitleProcessor *subtitleP
     this->subtitleProcessor = subtitleProcessor;
     this->settings = settings;
 
-    QRegExp regex("[0-9]+([.][0-9]+)?|pal|25p|ntsc|30p|24p|50i|60i");
-    fpsSrcValidator = new QRegExpValidator(regex);
-    fpsTrgValidator = new QRegExpValidator(regex);
+    QRegularExpression regex("[0-9]+([.][0-9]+)?|pal|25p|ntsc|30p|24p|50i|60i");
+    fpsSrcValidator = new QRegularExpressionValidator(regex);
+    fpsTrgValidator = new QRegularExpressionValidator(regex);
     scaleXValidator = new QDoubleValidator;
     scaleYValidator = new QDoubleValidator;
     delayPTSValidator = new QDoubleValidator;
