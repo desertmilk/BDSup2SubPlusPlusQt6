@@ -56,6 +56,15 @@ ConversionDialog::ConversionDialog(QWidget *parent, SubtitleProcessor *subtitleP
     delayPTSValidator = new QDoubleValidator;
     minTimePTSValidator = new QDoubleValidator;
 
+    connect(ui->sourceFramerateComboBox, SIGNAL(currentIndexChanged(QString)),
+            this, SLOT(on_sourceFramerateComboBox_currentIndexChanged(QString)));
+    connect(ui->sourceFramerateComboBox, SIGNAL(editTextChanged(QString)),
+            this, SLOT(on_sourceFramerateComboBox_editTextChanged(QString)));
+    connect(ui->targetFramerateComboBox, SIGNAL(currentIndexChanged(QString)),
+            this, SLOT(on_targetFramerateComboBox_currentIndexChanged(QString)));
+    connect(ui->targetFramerateComboBox, SIGNAL(editTextChanged(QString)),
+            this, SLOT(on_targetFramerateComboBox_editTextChanged(QString)));
+
     ui->sourceFramerateComboBox->setValidator(fpsSrcValidator);
     ui->sourceFramerateComboBox->setCompleter(0);
     ui->targetFramerateComboBox->setValidator(fpsTrgValidator);
