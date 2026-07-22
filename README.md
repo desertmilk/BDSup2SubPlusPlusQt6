@@ -5,7 +5,7 @@ BDSup2Sub++
 
 BDSup2Sub++ is a Qt-based subtitle conversion tool for image-based stream formats. It is a modernized fork of the original BDSup2Sub codebase with additional features for DVD/BD subtitle conversion.
 
-Current maintainer is paradoxic4l.
+This project uses Qt Widgets and Qt XML.
 
 ## Linux build instructions
 
@@ -49,9 +49,3 @@ QT_QPA_PLATFORM=offscreen ./bdsup2sub++ --no-verbose -o output.sub input.sup
 ```
 
 This is useful for converting a SUP file to SUB/IDX without launching the GUI.
-
-### Notes
-
-- The project uses Qt Widgets and Qt XML support.
-- If you encounter missing Qt modules, install the matching Qt6 development packages for your distribution.
-- The `default.nix` package expression was removed; Linux users should build with Qt6/qmake directly.
