@@ -63,17 +63,23 @@ jobs:
           version: ${{ env.QT_VERSION }}
           cache: true
 
-      - name: Configure and build
+      - name: Configure and build (Unix)
+        if: matrix.platform != 'windows'
         shell: bash
         run: |
           mkdir -p build
           cd build
           qmake6 "CONFIG+=release" "CONFIG-=debug_and_release" ../src/${{ env.APP_NAME }}.pro
-          if [ "${{ matrix.platform }}" = "windows" ]; then
-            nmake
-          else
-            make -j"$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)"
-          fi
+          make -j"$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)"
+
+      - name: Configure and build (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path build | Out-Null
+          Set-Location build
+          qmake6 "CONFIG+=release" "CONFIG-=debug_and_release" ../src/$env:APP_NAME.pro
+          nmake
 
       - name: Package (Linux tarball)
         if: matrix.platform == 'linux'
