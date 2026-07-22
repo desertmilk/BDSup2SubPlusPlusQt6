@@ -10,7 +10,7 @@ permissions:
   contents: write
 
 env:
-  QT_VERSION: '6.7.*'
+  QT_VERSION: '6.11.1'
   APP_NAME: "bdsup2sub++"
 
 jobs:
