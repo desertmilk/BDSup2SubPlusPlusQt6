@@ -49,3 +49,16 @@ QT_QPA_PLATFORM=offscreen ./bdsup2sub++ --no-verbose -o output.sub input.sup
 ```
 
 This is useful for converting a SUP file to SUB/IDX without launching the GUI.
+
+### Tests
+
+A QtTest-based unit test project is available in `tests/`.
+
+Build and run the tests with:
+
+```bash
+cd tests
+qmake6 bdsup2subplusplus_tests.pro
+make
+./bdsup2subplusplus_tests
+```
