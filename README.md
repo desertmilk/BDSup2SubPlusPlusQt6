@@ -1,6 +1,6 @@
-# BDSup2Sub++
+# BDSup2Sub++Qt6
 
-This is a Qt6-based subtitle conversion tool for image-based stream formats, notably to convert between **Blu-ray (`.sup`)** and **DVD (`.sub`/`.idx`)** subtitle formats.
+This is a Qt6-based subtitle conversion tool for image-based stream formats. Notably, this software allows you to convert subtitle files for **Blu-ray (`.sup`)** and **DVD (`.sub`/`.idx`)**.
 
 It is a modernized fork of [BDSup2Sub++](https://github.com/amichaelt/BDSup2SubPlusPlus) (last release in 2013), which itself is a fork of the original, Java-based, [BDSup2Sub codebase](https://github.com/mjuhasz/BDSup2Sub) (also last release in 2013). These projects are hard to build and run on modern systems, because of ancient dependencies. I've tried to change the original code (from @amichaelt) as little as possible. The primary change is upgrading to Qt6.
 
