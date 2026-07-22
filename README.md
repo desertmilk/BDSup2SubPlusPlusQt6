@@ -1,13 +1,15 @@
 # BDSup2Sub++
 
-BDSup2Sub++ is a Qt6-based subtitle conversion tool for image-based stream formats. It is a modernized fork of the original BDSup2Sub codebase, specifically designed to handle, process, and convert between **Blu-ray (`.sup`)** and **DVD (`.sub`/`.idx`)** subtitle formats.
+This is a Qt6-based subtitle conversion tool for image-based stream formats, notably to convert between **Blu-ray (`.sup`)** and **DVD (`.sub`/`.idx`)** subtitle formats.
+
+It is a modernized fork of [BDSup2Sub++](https://github.com/amichaelt/BDSup2SubPlusPlus) (last release in 2013), which itself is a fork of the original, Java-based, [BDSup2Sub codebase](https://github.com/mjuhasz/BDSup2Sub) (also last release in 2013). These projects are hard to build and run on modern systems, because of ancient dependencies. I've tried to change the original code (from @amichaelt) as little as possible. The primary change is upgrading to Qt6.
 
 ## Installation & Downloads
 
 Pre-compiled binaries are automatically built and available on the [Releases page](https://github.com/prinsbert/BDSup2SubPlusPlus/releases/) for multiple platforms:
 
-*   **Linux (AppImage):** A fully self-contained application. Simply download, make it executable (`chmod +x`), and run. No external dependencies required.
-*   **Linux (Tarball):** A standard compiled binary. **Note:** This build requires the system to have the Qt6 Widgets library installed to run.
+*   **Linux (AppImage):** A fully self-contained application. Simply download, make it executable if it isn't already (`chmod +x`), and run. No external dependencies required.
+*   **Linux (Tarball):** A standard compiled binary. **Note:** This build requires the system to have the [Qt6 Widgets](https://doc.qt.io/qt-6/linux.html) library installed to run.
 *   **Windows (.zip):** A portable archive containing the `bdsup2sub++.exe` binary and all required Qt dependencies bundled together.
 *   **macOS (.dmg):** A standard macOS disk image containing the application bundle.
 
