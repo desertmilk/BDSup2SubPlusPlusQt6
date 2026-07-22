@@ -1,0 +1,173 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  QT_VERSION: '6.7.*'
+  APP_NAME: "bdsup2sub++"
+
+jobs:
+  build:
+    name: Build (${{ matrix.platform }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            platform: linux
+          - os: windows-latest
+            platform: windows
+          - os: macos-latest
+            platform: macos
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up MSVC dev environment (Windows)
+        if: matrix.platform == 'windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install Qt (Linux)
+        if: matrix.platform == 'linux'
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          cache: true
+
+      - name: Install Qt (Windows)
+        if: matrix.platform == 'windows'
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          arch: win64_msvc2022_64
+          cache: true
+
+      - name: Install Qt (macOS)
+        if: matrix.platform == 'macos'
+        uses: jurplel/install-qt-action@v4
+        with:
+          version: ${{ env.QT_VERSION }}
+          cache: true
+
+      - name: Configure and build
+        shell: bash
+        run: |
+          mkdir -p build
+          cd build
+          qmake6 "CONFIG+=release" "CONFIG-=debug_and_release" ../src/${{ env.APP_NAME }}.pro
+          if [ "${{ matrix.platform }}" = "windows" ]; then
+            nmake
+          else
+            make -j"$(nproc 2>/dev/null || sysctl -n hw.ncpu 2>/dev/null || echo 2)"
+          fi
+
+      - name: Package (Linux tarball)
+        if: matrix.platform == 'linux'
+        run: |
+          BIN=$(find build -maxdepth 3 -type f -name "${{ env.APP_NAME }}" | head -n1)
+          if [ -z "$BIN" ]; then echo "Binary not found under build/ - check the output path for this .pro file" >&2; exit 1; fi
+          STAGE="dist/${{ env.APP_NAME }}-linux-x64"
+          mkdir -p "$STAGE"
+          cp "$BIN" "$STAGE/"
+          tar -czf "${{ env.APP_NAME }}-linux-x64.tar.gz" -C dist "${{ env.APP_NAME }}-linux-x64"
+
+      - name: Package (Linux AppImage)
+        if: matrix.platform == 'linux'
+        run: |
+          set -e
+          BIN=$(find build -maxdepth 3 -type f -name "${{ env.APP_NAME }}" | head -n1)
+          if [ -z "$BIN" ]; then echo "Binary not found under build/ - check the output path for this .pro file" >&2; exit 1; fi
+
+          # Stage the AppDir
+          mkdir -p AppDir/usr/bin
+          cp "$BIN" AppDir/usr/bin/
+
+          # The repo only ships a .ico/.icns - convert to a PNG linuxdeploy can use
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq imagemagick
+
+          convert "src/bdsup2sub.ico" -resize 256x256 "${{ env.APP_NAME }}.png"
+
+          # Launching from a desktop menu runs with no args, which opens the GUI -
+          # headless/offscreen conversion is a separate CLI path (see README), not what
+          # this launcher entry is for, so no terminal here.
+          printf '[Desktop Entry]\nType=Application\nName=BDSup2Sub++\nExec=%s\nIcon=%s\nCategories=Utility;AudioVideo;\nTerminal=false\n' \
+            "${{ env.APP_NAME }}" "${{ env.APP_NAME }}" > "${{ env.APP_NAME }}.desktop"
+
+          wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          wget -q https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
+          chmod +x linuxdeploy-x86_64.AppImage linuxdeploy-plugin-qt-x86_64.AppImage
+
+          # GitHub-hosted runners don't have FUSE set up, so extract-and-run instead of mounting
+          export APPIMAGE_EXTRACT_AND_RUN=1
+
+          ./linuxdeploy-x86_64.AppImage \
+            --appdir AppDir \
+            --executable "AppDir/usr/bin/${{ env.APP_NAME }}" \
+            --desktop-file "${{ env.APP_NAME }}.desktop" \
+            --icon-file "${{ env.APP_NAME }}.png" \
+            --plugin qt \
+            --output appimage
+
+          mkdir -p dist
+          APPIMG=$(find . -maxdepth 1 -name "*.AppImage" | head -n1)
+          if [ -z "$APPIMG" ]; then echo "linuxdeploy did not produce an AppImage" >&2; exit 1; fi
+          mv "$APPIMG" "dist/${{ env.APP_NAME }}-linux-x86_64.AppImage"
+
+      - name: Package (Windows)
+        if: matrix.platform == 'windows'
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Path build -Recurse -Filter "$env:APP_NAME.exe" | Select-Object -First 1
+          if (-not $exe) { Write-Error "Binary not found under build/ - check the output path for this .pro file"; exit 1 }
+          $stage = "dist/$env:APP_NAME-windows-x64"
+          New-Item -ItemType Directory -Path $stage -Force | Out-Null
+          Copy-Item $exe.FullName $stage
+          windeployqt --release "$stage\$env:APP_NAME.exe"
+          Compress-Archive -Path "$stage\*" -DestinationPath "$env:APP_NAME-windows-x64.zip"
+
+      - name: Package (macOS)
+        if: matrix.platform == 'macos'
+        run: |
+          APP=$(find build -maxdepth 3 -type d -name "*.app" | head -n1)
+          if [ -z "$APP" ]; then echo "App bundle not found under build/ - check the output path for this .pro file" >&2; exit 1; fi
+          macdeployqt "$APP" -dmg
+          mkdir -p dist
+          cp "$(dirname "$APP")"/*.dmg "dist/${{ env.APP_NAME }}-macos-x64.dmg"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-build
+          path: |
+            *.zip
+            *.tar.gz
+            dist/*.dmg
+            dist/*.AppImage
+          if-no-files-found: error
+
+  release:
+    name: Create Release
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+          draft: false
+          generate_release_notes: true
