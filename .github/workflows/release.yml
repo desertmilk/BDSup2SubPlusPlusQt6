@@ -11,6 +11,11 @@ permissions:
 
 env:
   QT_VERSION: '6.11.1'
+  # aqtinstall v3.3.0 can't resolve Qt 6.11.x on Windows - Qt's download server
+  # restructured its directory layout at 6.11.0 and aqtinstall doesn't handle it yet
+  # for Windows (miurahr/aqtinstall#959, #1007). Linux/macOS are unaffected, so only
+  # Windows is pinned to the last version before that break.
+  QT_VERSION_WINDOWS: '6.10.3'
   APP_NAME: "bdsup2sub++"
 
 jobs:
@@ -47,7 +52,7 @@ jobs:
         if: matrix.platform == 'windows'
         uses: jurplel/install-qt-action@v4
         with:
-          version: ${{ env.QT_VERSION }}
+          version: ${{ env.QT_VERSION_WINDOWS }}
           arch: win64_msvc2022_64
           cache: true
 
