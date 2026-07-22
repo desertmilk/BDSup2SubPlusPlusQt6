@@ -94,30 +94,7 @@ jobs:
       - name: Package (Linux AppImage)
         if: matrix.platform == 'linux'
         run: |
-          set -e
-          BIN=$(find build -maxdepth 3 -type f -name "${{ env.APP_NAME }}" | head -n1)
-          if [ -z "$BIN" ]; then echo "Binary not found under build/ - check the output path for this .pro file" >&2; exit 1; fi
-
-          # Stage the AppDir
-          mkdir -p AppDir/usr/bin
-          cp "$BIN" AppDir/usr/bin/
-
-          # Use the PNG icon shipped in the repo (a .ico can contain multiple
-          # frames, which trips up single-file conversion - a real PNG avoids that)
-          cp "src/bdsup2sub_256x256.png" "${{ env.APP_NAME }}.png"
-
-          # Launching from a desktop menu runs with no args, which opens the GUI -
-          # headless/offscreen conversion is a separate CLI path (see README), not what
-          # this launcher entry is for, so no terminal here.
-          printf '[Desktop Entry]\nType=Application\nName=BDSup2Sub++\nExec=%s\nIcon=%s\nCategories=Utility;AudioVideo;\nTerminal=false\n' \
-            "${{ env.APP_NAME }}" "${{ env.APP_NAME }}" > "${{ env.APP_NAME }}.desktop"
-
-          wget -q https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
-          wget -q https://github.com/linuxdeploy/linuxdeploy-plugin-qt/releases/download/continuous/linuxdeploy-plugin-qt-x86_64.AppImage
-          chmod +x linuxdeploy-x86_64.AppImage linuxdeploy-plugin-qt-x86_64.AppImage
-
-          # GitHub-hosted runners don't have FUSE set up, so extract-and-run instead of mounting
-          export APPIMAGE_EXTRACT_AND_RUN=1
+          # ... [keep everything else before this the same] ...
 
           ./linuxdeploy-x86_64.AppImage \
             --appdir AppDir \
@@ -128,6 +105,11 @@ jobs:
             --output appimage
 
           mkdir -p dist
+          
+          # FIX: Delete the tools so they aren't caught by the find command
+          rm linuxdeploy*.AppImage
+
+          # Now this will safely find your actual generated AppImage
           APPIMG=$(find . -maxdepth 1 -name "*.AppImage" | head -n1)
           if [ -z "$APPIMG" ]; then echo "linuxdeploy did not produce an AppImage" >&2; exit 1; fi
           mv "$APPIMG" "dist/${{ env.APP_NAME }}-linux-x86_64.AppImage"
