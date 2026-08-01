@@ -140,8 +140,8 @@ cat > "$XML" <<EOF
   </stream>
 </subpictures>
 EOF
-echo "==> spumux.xml generated."
-
+echo "==> spumux.xml generated:"
+sed 's/^/    /' "$XML"
 # ---------------------------------------------------------------------------
 # Step 2: Build (or find) a blank DVD-compliant video to carry the subtitle stream.
 #
