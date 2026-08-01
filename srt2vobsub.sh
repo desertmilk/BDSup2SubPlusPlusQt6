@@ -141,21 +141,20 @@ cat > "$XML" <<EOF
 </subpictures>
 EOF
 echo "==> spumux.xml generated."
-sed 's/^/    /' "$XML"
 
 # ---------------------------------------------------------------------------
-# Step 2: Build a blank DVD-compliant video to carry the subtitle stream.
+# Step 2: Build (or find) a blank DVD-compliant video to carry the subtitle stream.
 #
 # spumux inserts subtitles into an existing MPEG-PS stream, not as an isolated
 # picture stream. Since we don't have a real source video at this stage, we
 # generate a dummy clip just long enough to cover the last subtitle's end
 # time (+3s of padding).
 # ---------------------------------------------------------------------------
-
-echo "==> Determining dummy video duration..."
+echo "==> Determining required video duration..."
 # Locate the last timecode in the .srt file
 LAST_END_LINE=$(grep -oE '[0-9]{2}:[0-9]{2}:[0-9]{2},[0-9]{3} --> [0-9]{2}:[0-9]{2}:[0-9]{2},[0-9]{3}' "$SRT" | tail -1 || true)
 [ -n "$LAST_END_LINE" ] || { echo "Couldn't find any timecodes in $SRT" >&2; exit 1; }
+
 LAST_END=$(echo "$LAST_END_LINE" | awk '{print $3}' | tr ',' '.')
 # - ${LAST_END%.*} strips the .fff milliseconds off the end (e.g. 01:02:03.450 → 01:02:03)
 # - prefixing `read` with `IFS=:` tells `read` to split only for that one command on colons instead of whitespace, so '01:02:03' → H='01' M='02' S='03'
@@ -164,12 +163,31 @@ IFS=: read -r H M S <<< "${LAST_END%.*}"
 # Duration in seconds
 DURATION=$(( 10#$H * 3600 + 10#$M * 60 + 10#$S + 3 ))
 FRAMES=$(( DURATION * FPS_INT ))
-echo "    ${DURATION}s (~${FRAMES} frames) (last subtitle ends at ${LAST_END})"
-echo "==> Generating dummy video with mencoder..."
+
+echo "    Required: ${DURATION}s (~${FRAMES} frames) (last subtitle ends at ${LAST_END})"
+SUITABLE_DUMMY=""
+# Look for a cached dummy video in the current directory (e.g., dummy_pal_5000s.mpg)
+for vid in dummy_${FORMAT}_*s.mpg; do
+  [ -e "$vid" ] || continue
+  # Extract duration in seconds using native bash substitution
+  VID_DUR="${vid#dummy_${FORMAT}_}"
+  VID_DUR="${VID_DUR%s.mpg}"
+  if [[ "$VID_DUR" =~ ^[0-9]+$ ]] && [ "$VID_DUR" -ge "$DURATION" ]; then
+    SUITABLE_DUMMY="$vid"
+    break
+  fi
+done
+if [ -n "$SUITABLE_DUMMY" ]; then
+  echo "==> Found existing cached dummy video: $SUITABLE_DUMMY"
+  DUMMY_VIDEO="$SUITABLE_DUMMY"
+else
+  DUMMY_VIDEO="dummy_${FORMAT}_${DURATION}s.mpg"
+  echo "==> Generating new dummy video ($DUMMY_VIDEO) with mencoder..."
 # We trick mencoder into reading an endless stream of null bytes from /dev/zero,
 # interpreting them as raw YV12 video (which produces a solid green frame).
 # We encode exactly enough frames to cover the subtitle duration.
-mencoder /dev/zero -demuxer rawvideo -rawvideo w="${WIDTH}":h="${HEIGHT}":fps="${FPS}":format=yv12 -ovc lavc -lavcopts vcodec=mpeg2video -of mpeg -mpegopts format=dvd:tsaf -frames "${FRAMES}" -nosound -quiet -o "$WORKDIR/dummy.mpg" 2>/dev/null
+  mencoder /dev/zero -demuxer rawvideo -rawvideo w="${WIDTH}":h="${HEIGHT}":fps="${FPS}":format=yv12 -ovc lavc -lavcopts vcodec=mpeg2video -of mpeg -mpegopts format=dvd:tsaf -frames "${FRAMES}" -nosound -quiet -o "$DUMMY_VIDEO" 2>/dev/null
+fi
 
 # Old ffmpeg solution, for reference:
 #
@@ -188,7 +206,7 @@ mencoder /dev/zero -demuxer rawvideo -rawvideo w="${WIDTH}":h="${HEIGHT}":fps="$
 # stream into a copy of the dummy video.
 # ---------------------------------------------------------------------------
 echo "==> Muxing subtitles with spumux..."
-spumux "$XML" < "$WORKDIR/dummy.mpg" > "$WORKDIR/muxed.mpg" 2>/dev/null
+spumux "$XML" < "$DUMMY_VIDEO" > "$WORKDIR/muxed.mpg" 2>/dev/null
 
 # ---------------------------------------------------------------------------
 # Step 4: Extract the standalone VobSub .sub/.idx pair.
