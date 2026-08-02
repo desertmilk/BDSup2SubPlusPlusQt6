@@ -1,24 +1,18 @@
 #ifndef HR_TIME_H
 #define HR_TIME_H
 
-#include <windows.h>
-
-typedef struct {
-    LARGE_INTEGER start;
-    LARGE_INTEGER stop;
-} stopWatch;
+#include <chrono>
 
 class CStopWatch {
-
 private:
-        stopWatch timer;
-        LARGE_INTEGER frequency;
-        double LIToSecs( LARGE_INTEGER & L);
+    std::chrono::steady_clock::time_point startTime;
+    std::chrono::steady_clock::time_point stopTime;
+
 public:
-        CStopWatch();
-        void startTimer( );
-        void stopTimer( );
-        double getElapsedTime();
+    CStopWatch();
+    void startTimer();
+    void stopTimer();
+    double getElapsedTime();
 };
 
 #endif // HR_TIME_H
