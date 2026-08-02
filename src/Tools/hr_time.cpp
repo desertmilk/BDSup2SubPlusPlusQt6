@@ -1,9 +1,6 @@
-#include <windows.h>
-
-#ifndef hr_timer
 #include "hr_time.h"
-#define hr_timer
-#endif
+
+#ifdef Q_OS_WIN
 
 double CStopWatch::LIToSecs( LARGE_INTEGER & L) {
         return ((double)L.QuadPart /(double)frequency.QuadPart);
@@ -29,3 +26,28 @@ double CStopWatch::getElapsedTime() {
         time.QuadPart = timer.stop.QuadPart - timer.start.QuadPart;
     return LIToSecs( time) ;
 }
+
+#else
+
+#include <chrono>
+
+CStopWatch::CStopWatch(){
+    timer.start = std::chrono::steady_clock::time_point();
+    timer.stop = std::chrono::steady_clock::time_point();
+}
+
+void CStopWatch::startTimer() {
+    timer.start = std::chrono::steady_clock::now();
+}
+
+void CStopWatch::stopTimer() {
+    timer.stop = std::chrono::steady_clock::now();
+}
+
+double CStopWatch::getElapsedTime() {
+    using namespace std::chrono;
+    duration<double> diff = duration_cast<duration<double>>(timer.stop - timer.start);
+    return diff.count();
+}
+
+#endif

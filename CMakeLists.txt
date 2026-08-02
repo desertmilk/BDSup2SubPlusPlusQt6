@@ -1,6 +1,12 @@
 # BDSup2Sub++ 核心静态库（不含主窗口 / CLI / Qxt），供 SubtitleTool 等宿主链接。
 # 由宿主工程在 find_package(Qt6 ...) 与 qt_standard_project_setup() 之后 add_subdirectory 本目录。
 
+cmake_minimum_required(VERSION 3.16)
+project(bdsup2subplusplus LANGUAGES CXX)
+
+# Ensure Qt6 is found so helper commands like qt_add_library are available
+find_package(Qt6 COMPONENTS Core Gui Widgets Xml REQUIRED)
+
 set(BDSUP_SRC_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/src")
 
 if(NOT EXISTS "${BDSUP_SRC_ROOT}/Subtitles/supbd.cpp")
@@ -29,7 +35,6 @@ target_link_libraries(bdsup2subplusplus_core PUBLIC
     Qt::Gui
     Qt::Widgets
     Qt::Xml
-    Qt6::Core5Compat
 )
 
 set_target_properties(bdsup2subplusplus_core PROPERTIES AUTOMOC ON)
