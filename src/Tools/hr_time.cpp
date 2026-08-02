@@ -1,53 +1,42 @@
 #include "hr_time.h"
 
+CStopWatch::CStopWatch()
+{
 #ifdef Q_OS_WIN
-
-double CStopWatch::LIToSecs( LARGE_INTEGER & L) {
-        return ((double)L.QuadPart /(double)frequency.QuadPart);
-}
-
-CStopWatch::CStopWatch(){
-        timer.start.QuadPart=0;
-        timer.stop.QuadPart=0;
-        QueryPerformanceFrequency( &frequency );
-}
-
-void CStopWatch::startTimer( ) {
-    QueryPerformanceCounter(&timer.start);
-}
-
-void CStopWatch::stopTimer( ) {
-    QueryPerformanceCounter(&timer.stop);
-}
-
-
-double CStopWatch::getElapsedTime() {
-        LARGE_INTEGER time;
-        time.QuadPart = timer.stop.QuadPart - timer.start.QuadPart;
-    return LIToSecs( time) ;
-}
-
+    startTime.QuadPart = 0;
+    stopTime.QuadPart = 0;
+    QueryPerformanceFrequency(&frequency);
 #else
-
-#include <chrono>
-
-CStopWatch::CStopWatch(){
-    timer.start = std::chrono::steady_clock::time_point();
-    timer.stop = std::chrono::steady_clock::time_point();
-}
-
-void CStopWatch::startTimer() {
-    timer.start = std::chrono::steady_clock::now();
-}
-
-void CStopWatch::stopTimer() {
-    timer.stop = std::chrono::steady_clock::now();
-}
-
-double CStopWatch::getElapsedTime() {
-    using namespace std::chrono;
-    duration<double> diff = duration_cast<duration<double>>(timer.stop - timer.start);
-    return diff.count();
-}
-
+    startTime = std::chrono::steady_clock::time_point{};
+    stopTime = std::chrono::steady_clock::time_point{};
 #endif
+}
+
+void CStopWatch::startTimer()
+{
+#ifdef Q_OS_WIN
+    QueryPerformanceCounter(&startTime);
+#else
+    startTime = std::chrono::steady_clock::now();
+#endif
+}
+
+void CStopWatch::stopTimer()
+{
+#ifdef Q_OS_WIN
+    QueryPerformanceCounter(&stopTime);
+#else
+    stopTime = std::chrono::steady_clock::now();
+#endif
+}
+
+double CStopWatch::getElapsedTime()
+{
+#ifdef Q_OS_WIN
+    const double elapsed = static_cast<double>(stopTime.QuadPart - startTime.QuadPart);
+    return elapsed / static_cast<double>(frequency.QuadPart);
+#else
+    const auto elapsed = std::chrono::duration<double>(stopTime - startTime);
+    return elapsed.count();
+#endif
+}

@@ -29,6 +29,8 @@
 #include <QRect>
 #include <QList>
 
+#include <cassert>
+
 Bitmap::Bitmap()
 {
 }

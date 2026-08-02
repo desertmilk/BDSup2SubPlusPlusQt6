@@ -79,4 +79,6 @@ Desktop.ini
 # Windows shortcuts
 *.lnk
 
+*.iml
+.idea/
 /build/
