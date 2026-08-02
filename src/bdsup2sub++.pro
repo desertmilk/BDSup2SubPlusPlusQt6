@@ -69,7 +69,9 @@ SOURCES += main.cpp\
     colordialog.cpp \
     framepalettedialog.cpp \
     movedialog.cpp \
-    Subtitles/imageobject.cpp
+    Subtitles/imageobject.cpp \
+    qxtglobal.cpp \
+    qxtcommandoptions.cpp
 
 HEADERS  += bdsup2sub.h \
     zoomableimagearea.h \
@@ -117,7 +119,9 @@ HEADERS  += bdsup2sub.h \
     helpdialog.h \
     colordialog.h \
     framepalettedialog.h \
-    movedialog.h
+    movedialog.h \
+    qxtglobal.h \
+    qxtcommandoptions.h
 
 FORMS    += bdsup2sub.ui \
     progressdialog.ui \
