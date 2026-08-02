@@ -1,31 +1,25 @@
-#include <windows.h>
-
-#ifndef hr_timer
 #include "hr_time.h"
-#define hr_timer
-#endif
 
-double CStopWatch::LIToSecs( LARGE_INTEGER & L) {
-        return ((double)L.QuadPart /(double)frequency.QuadPart);
+#include <chrono>
+
+CStopWatch::CStopWatch()
+{
+    startTime = std::chrono::steady_clock::time_point{};
+    stopTime = std::chrono::steady_clock::time_point{};
 }
 
-CStopWatch::CStopWatch(){
-        timer.start.QuadPart=0;
-        timer.stop.QuadPart=0;
-        QueryPerformanceFrequency( &frequency );
+void CStopWatch::startTimer()
+{
+    startTime = std::chrono::steady_clock::now();
 }
 
-void CStopWatch::startTimer( ) {
-    QueryPerformanceCounter(&timer.start);
+void CStopWatch::stopTimer()
+{
+    stopTime = std::chrono::steady_clock::now();
 }
 
-void CStopWatch::stopTimer( ) {
-    QueryPerformanceCounter(&timer.stop);
-}
-
-
-double CStopWatch::getElapsedTime() {
-        LARGE_INTEGER time;
-        time.QuadPart = timer.stop.QuadPart - timer.start.QuadPart;
-    return LIToSecs( time) ;
+double CStopWatch::getElapsedTime()
+{
+    const auto elapsed = std::chrono::duration<double>(stopTime - startTime);
+    return elapsed.count();
 }
